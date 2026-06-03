@@ -130,7 +130,9 @@ def list_reports(db: Session = Depends(get_db), user: User = Depends(get_current
 def create_report(
     type: ReportType = Form(...), category: str = Form("General"), cqc_tag: str = Form("None"),
     title: str = Form(...), description: str = Form(...), days_to_resolve: int = Form(7), 
-    is_pilot: bool = Form(False), file: UploadFile = File(None), db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    is_pilot: bool = Form(False), 
+    fra_risk_level: str = Form(None), fra_hazards: str = Form(None), # FRA Fields
+    file: UploadFile = File(None), db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ):
     deadline = datetime.utcnow() + timedelta(days=days_to_resolve)
     file_path = None
@@ -138,8 +140,15 @@ def create_report(
         file_path = f"uploads/{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{file.filename.replace(' ', '_')}"
         with open(file_path, "wb") as buffer: shutil.copyfileobj(file.file, buffer)
             
-    db.add(Report(report_type=type, category=category, cqc_tag=cqc_tag, title=title, description=description, due_date=deadline, is_pilot=is_pilot, site_location=user.site_location, reporter_id=user.id, attachment_path=file_path))
+    new_report = Report(
+        report_type=type, category=category, cqc_tag=cqc_tag, title=title, 
+        description=description, due_date=deadline, is_pilot=is_pilot, 
+        site_location=user.site_location, reporter_id=user.id, attachment_path=file_path,
+        fra_risk_level=fra_risk_level, fra_hazards=fra_hazards
+    )
+    db.add(new_report)
     log_audit(db, f"Submitted new {type.value} report: {title}", user.id)
+    db.commit()
     return {"message": "Report submitted"}
 
 @app.put("/reports/{report_id}/close")
@@ -154,6 +163,7 @@ def close_report(
     report.rca_1 = rca_1; report.rca_2 = rca_2; report.rca_3 = rca_3; report.rca_4 = rca_4; report.rca_5 = rca_5
     report.review_date = datetime.utcnow() + timedelta(days=review_days)
     log_audit(db, f"Closed report #{report.id} and completed RCA", user.id)
+    db.commit()
     return {"message": "Closed"}
 
 @app.post("/reports/{report_id}/share")
@@ -162,6 +172,7 @@ def share_report(report_id: int, db: Session = Depends(get_db), user: User = Dep
     report.secure_link_id = str(uuid.uuid4())
     report.secure_link_expires = datetime.utcnow() + timedelta(hours=48)
     log_audit(db, f"Generated secure external link for report #{report.id}", user.id)
+    db.commit()
     return {"secure_link": report.secure_link_id}
 
 @app.get("/shared/{link_id}", response_class=HTMLResponse)
@@ -177,11 +188,11 @@ def export_reports(db: Session = Depends(get_db), user: User = Depends(get_curre
     all_reports = db.query(Report).all()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Department", "Type", "Category", "CQC Domain", "Title", "Status", "Action Plan", "RCA Final Cause"])
+    writer.writerow(["ID", "Department", "Type", "Category", "CQC Domain", "Title", "Status", "FRA Risk Level", "Action Plan", "RCA Final Cause"])
     for r in all_reports:
         if user.role != UserRole.ADMIN and r.site_location != user.site_location: continue
         if r.report_type == ReportType.SAFEGUARDING and user.role not in [UserRole.DSL, UserRole.ADMIN]: continue
-        writer.writerow([r.id, r.site_location, r.report_type.value.upper(), r.category, r.cqc_tag, r.title, r.status, r.action_plan, r.rca_5])
+        writer.writerow([r.id, r.site_location, r.report_type.value.upper(), r.category, r.cqc_tag, r.title, r.status, r.fra_risk_level, r.action_plan, r.rca_5])
     output.seek(0)
     log_audit(db, "Exported CSV Data", user.id)
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=samphase_export.csv"})
@@ -202,6 +213,6 @@ def ai_analyze_themes(db: Session = Depends(get_db), user: User = Depends(get_cu
     
     1. **Primary Theme:** 42% of recent complaints in Operations relate to weekend staffing handovers.
     2. **RCA Insight:** '5 Whys' data indicates recurring maintenance delays are negatively impacting the CQC 'Safe' domain.
-    3. **Actionable Recommendation:** Implement a mandatory Friday afternoon maintenance checklist and review weekend handover documentation procedures.
+    3. **Fire Safety:** 2 Fire Risk Assessments have flagged "Substantial" risks regarding blocked emergency exits. Immediate action recommended.
     """
     return {"analysis": mock_ai_response}
