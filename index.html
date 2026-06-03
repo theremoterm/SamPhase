@@ -19,7 +19,7 @@
     </nav>
 
     <div class="max-w-7xl mx-auto mt-8 p-4">
-
+        
         <div id="loginSection" class="bg-white p-8 rounded shadow-lg max-w-md mx-auto mt-10">
             <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">System Login</h2>
             <div id="loginError" class="hidden bg-red-100 text-red-700 px-4 py-3 rounded mb-4 text-sm text-center"></div>
@@ -29,11 +29,12 @@
         </div>
 
         <div id="dashboardSection" class="hidden space-y-8">
-
+            
             <div id="adminSection" class="hidden bg-slate-800 text-white p-6 rounded shadow-lg">
                 <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
                     <h3 class="text-lg font-bold">Admin Controls</h3>
                     <div class="flex gap-2">
+                        <a href="http://localhost:8501" target="_blank" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold shadow flex items-center">📊 Open Streamlit Analytics</a>
                         <button onclick="runAIAudit()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-sm font-bold shadow">🤖 Run AI Copilot</button>
                         <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-bold shadow">📥 Export CSV</button>
                     </div>
@@ -45,10 +46,10 @@
                         <option value="staff">Staff</option><option value="manager">Manager</option><option value="designated_safeguarding_lead">DSL</option><option value="admin">Admin</option>
                     </select>
                     <select id="newSite" class="w-1/5 p-2 rounded text-black">
-                        <option value="Bournemouth HQ">Bournemouth HQ</option>
-                        <option value="Poole Branch">Poole Branch</option>
-                        <option value="Christchurch Site">Christchurch Site</option>
-                        <option value="Global">Global (All Sites)</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Health and Safety">Health and Safety</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="Global">Global (All Departments)</option>
                     </select>
                     <button onclick="createUser()" class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded font-bold shadow w-1/5">Create User</button>
                 </div>
@@ -119,7 +120,7 @@
                 <div id="incidentList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2"></div>
                 <div id="safeguardingList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
                 <div id="complaintList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
-
+                
                 <div id="auditList" class="space-y-2 max-h-[800px] overflow-y-auto pr-2 hidden font-mono text-xs">
                     <table class="w-full text-left border-collapse">
                         <thead><tr class="bg-slate-100 border-b"><th class="p-2">Timestamp</th><th class="p-2">User</th><th class="p-2">Action</th></tr></thead>
@@ -134,7 +135,7 @@
         <div class="bg-white p-6 rounded shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-xl mb-2 text-indigo-900 border-b pb-2">RCA & Action Plan Matrix</h3>
             <p class="text-sm text-gray-600 mb-4">Complete the '5 Whys' root cause analysis to proceed with incident closure.</p>
-
+            
             <div class="bg-slate-50 p-4 rounded border mb-4 space-y-3">
                 <input type="text" id="rca1" placeholder="Why did the incident happen?" class="w-full p-2 border rounded text-sm">
                 <input type="text" id="rca2" placeholder="Why did THAT happen?" class="w-full p-2 border rounded text-sm">
@@ -188,7 +189,7 @@
             document.getElementById("loginSection").classList.add("hidden");
             document.getElementById("dashboardSection").classList.remove("hidden");
             document.getElementById("logoutBtn").classList.remove("hidden");
-
+            
             document.getElementById("userBadge").innerText = `Role: ${userRole.toUpperCase()}`;
             document.getElementById("userBadge").classList.remove("hidden");
             document.getElementById("siteBadge").innerText = `📍 ${userSite}`;
@@ -196,19 +197,19 @@
 
             if (userRole === "admin") {
                 document.getElementById("adminSection").classList.remove("hidden");
-                document.getElementById("tab-audit").classList.remove("hidden"); // Reveal Black Box
+                document.getElementById("tab-audit").classList.remove("hidden"); 
             }
             fetchReports(); fetchAnalytics();
         }
 
         async function submitReport(event) {
-            event.preventDefault();
+            event.preventDefault(); 
             const formData = new FormData();
             formData.append("type", document.getElementById("reportType").value);
             formData.append("cqc_tag", document.getElementById("reportCQC").value);
             formData.append("title", document.getElementById("reportTitle").value);
             formData.append("description", document.getElementById("reportDesc").value);
-
+            
             const fileInput = document.getElementById("reportFile");
             if (fileInput.files.length > 0) formData.append("file", fileInput.files[0]);
 
@@ -223,17 +224,17 @@
             const response = await fetch(`${API_URL}/reports/`, { headers: { "Authorization": `Bearer ${token}` } });
             const reports = await response.json();
             ['incident', 'safeguarding', 'complaint'].forEach(t => document.getElementById(t+'List').innerHTML = "");
-
+            
             reports.forEach(r => {
                 const isClosed = r.status === "Closed";
                 const cqcBadge = r.cqc_tag !== "None" ? `<span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded ml-2">CQC: ${r.cqc_tag}</span>` : "";
-
+                
                 let adminButtons = "";
                 if (!isClosed) {
                     adminButtons += `<button onclick="openCloseModal(${r.id})" class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded shadow">✅ Run RCA & Close</button>`;
                     if (userRole !== "staff") adminButtons += `<button onclick="generateSecureLink(${r.id})" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded shadow ml-2">🔗 LADO Link</button>`;
                 }
-
+                
                 let actionPlanHTML = "";
                 if (isClosed) {
                     actionPlanHTML = `
@@ -254,14 +255,14 @@
                 const cardHTML = `
                     <div class="border border-slate-200 p-4 rounded bg-white shadow-sm mb-4">
                         <div class="flex justify-between items-start">
-                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type}</span> ${cqcBadge} <span class="text-xs ml-2 text-gray-400">📍 ${r.site_location}</span>
+                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type}</span> ${cqcBadge} <span class="text-xs ml-2 text-gray-400">🏢 ${r.site_location}</span>
                             <h4 class="font-bold text-lg text-slate-900 mt-1">${r.title}</h4></div>
                             <div class="flex gap-2">${adminButtons}</div>
                         </div>
                         <p class="text-sm text-slate-700 mt-2 bg-slate-50 p-3 rounded border border-slate-100">${r.description}</p>
                         ${attachmentLink} ${activeLinkHTML} ${actionPlanHTML}
                     </div>`;
-
+                    
                 document.getElementById(r.report_type+'List').innerHTML += cardHTML;
             });
         }
@@ -273,7 +274,7 @@
                 document.getElementById("statOpen").innerText = data.open;
                 document.getElementById("statClosed").innerText = data.closed;
                 document.getElementById("analyticsSection").classList.remove("hidden");
-
+                
                 for (const [domain, stats] of Object.entries(data.heatmap)) {
                     document.getElementById(`h-${domain}`).innerText = stats.Open;
                     document.getElementById(`h-${domain}`).className = stats.Open > 0 ? "bg-red-200 font-bold rounded p-1" : "bg-gray-100 rounded p-1";
@@ -281,7 +282,6 @@
             }
         }
 
-        // --- NEW: FETCH AUDIT LOGS ---
         async function fetchAuditLogs() {
             const res = await fetch(`${API_URL}/audit_logs/`, { headers: { "Authorization": `Bearer ${token}` } });
             if (res.ok) {
@@ -295,7 +295,6 @@
             }
         }
 
-        // --- NEW: AI COPILOT ---
         async function runAIAudit() {
             document.getElementById('aiOutputContainer').classList.remove('hidden');
             document.getElementById('aiOutputText').innerText = "Connecting to AI Copilot... Analyzing textual themes...";
@@ -320,7 +319,7 @@
             f.append("rca_4", document.getElementById("rca4").value);
             f.append("rca_5", document.getElementById("rca5").value);
             f.append("review_days", 30);
-
+            
             await fetch(`${API_URL}/reports/${document.getElementById("closeReportId").value}/close`, { method: "PUT", headers: { "Authorization": `Bearer ${token}` }, body: f });
             document.getElementById("actionModal").classList.add("hidden");
             ['rca1','rca2','rca3','rca4','rca5','actionPlanText'].forEach(id => document.getElementById(id).value = "");
@@ -341,7 +340,7 @@
             const res = await fetch(`${API_URL}/users/`, { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: f });
             if (res.ok) alert("User created!");
         }
-
+        
         async function exportCSV() {
             const res = await fetch(`${API_URL}/reports/export`, { headers: { "Authorization": `Bearer ${token}` } });
             if (res.ok) {
