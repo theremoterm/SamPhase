@@ -1,1 +1,10 @@
-pip freeze > requirements.txt
+fastapi
+uvicorn
+sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+apscheduler
+streamlit
+pandas
+psycopg2-binary
