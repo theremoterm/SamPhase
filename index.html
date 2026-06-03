@@ -34,7 +34,7 @@
                 <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
                     <h3 class="text-lg font-bold">Admin Controls</h3>
                     <div class="flex gap-2">
-                        <a href="http://localhost:8501" target="_blank" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold shadow flex items-center">📊 Open Streamlit Analytics</a>
+                        <a href="http://localhost:8501" id="streamlitLink" target="_blank" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold shadow flex items-center">📊 Open Live Analytics</a>
                         <button onclick="runAIAudit()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-sm font-bold shadow">🤖 Run AI Copilot</button>
                         <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-bold shadow">📥 Export CSV</button>
                     </div>
@@ -55,6 +55,7 @@
                 </div>
             </div>
 
+            <!-- AI Output Box -->
             <div id="aiOutputContainer" class="hidden bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-6 rounded shadow-lg border-l-4 border-purple-400">
                 <h3 class="font-bold text-lg border-b border-purple-400 pb-2 mb-2 flex justify-between items-center">
                     AI Copilot Analysis <button onclick="document.getElementById('aiOutputContainer').classList.add('hidden')" class="text-sm bg-purple-800 px-2 rounded hover:bg-purple-700">Close</button>
@@ -80,6 +81,7 @@
                 </div>
             </div>
 
+            <!-- DYNAMIC SUBMISSION FORM (UPDATED WITH TARGETS) -->
             <div class="bg-white p-6 rounded shadow-lg border-t-4 border-indigo-500">
                 <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">File a New Entry</h3>
                 <form id="reportForm" onsubmit="submitReport(event)">
@@ -99,13 +101,20 @@
                                 <option value="None">None</option><option value="Safe">Safe</option><option value="Effective">Effective</option><option value="Caring">Caring</option><option value="Responsive">Responsive</option><option value="Well-led">Well-led</option>
                             </select>
                         </div>
+                        <!-- NEW DAY TARGET DROPDOWN -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Target Deadline</label>
+                            <select id="reportTarget" class="w-full p-2 border rounded border-blue-300">
+                                <option value="1">1 Day (Urgent)</option>
+                                <option value="3">3 Days</option>
+                                <option value="7" selected>7 Days (Standard)</option>
+                                <option value="14">14 Days</option>
+                                <option value="30">30 Days (Extended)</option>
+                            </select>
+                        </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Title / Location</label>
                             <input type="text" id="reportTitle" required class="w-full p-2 border rounded">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Evidence (Optional)</label>
-                            <input type="file" id="reportFile" class="w-full p-1 border rounded text-sm">
                         </div>
                     </div>
                     
@@ -115,11 +124,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Risk Rating</label>
                                 <select id="fraRisk" class="w-full p-2 border rounded border-orange-300 focus:ring-orange-500">
-                                    <option value="Trivial">Trivial</option>
-                                    <option value="Tolerable">Tolerable</option>
-                                    <option value="Moderate">Moderate</option>
-                                    <option value="Substantial">Substantial</option>
-                                    <option value="Intolerable">Intolerable (Immediate Action)</option>
+                                    <option value="Trivial">Trivial</option><option value="Tolerable">Tolerable</option><option value="Moderate">Moderate</option><option value="Substantial">Substantial</option><option value="Intolerable">Intolerable (Immediate Action)</option>
                                 </select>
                             </div>
                             <div>
@@ -130,12 +135,18 @@
                     </div>
 
                     <textarea id="reportDesc" placeholder="Details or Methodology..." required class="w-full p-2 border rounded mb-4 h-20"></textarea>
-                    <div class="flex justify-end">
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="w-1/3">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Evidence (Optional)</label>
+                            <input type="file" id="reportFile" class="w-full p-1 border rounded text-sm">
+                        </div>
                         <button type="submit" class="bg-indigo-600 text-white font-bold px-8 py-2 rounded hover:bg-indigo-700 shadow-md">Submit Entry</button>
                     </div>
                 </form>
             </div>
 
+            <!-- TABS -->
             <div class="bg-white p-6 rounded shadow-lg">
                 <div class="flex border-b mb-6 overflow-x-auto">
                     <button onclick="switchTab('incident')" id="tab-incident" class="px-6 py-2 font-bold text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap">🚨 Incidents</button>
@@ -159,6 +170,7 @@
         </div>
     </div>
 
+    <!-- RCA 5 WHYS MODAL -->
     <div id="actionModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-xl mb-2 text-indigo-900 border-b pb-2">RCA & Action Plan Matrix</h3>
@@ -189,7 +201,6 @@
 
         if (token) { showDashboard(); }
 
-        // Dynamic Form Logic for FRA
         function toggleFRAFields() {
             const type = document.getElementById("reportType").value;
             const fraFields = document.getElementById("fraFields");
@@ -197,7 +208,7 @@
             
             if(type === "fire_risk_assessment") {
                 fraFields.classList.remove("hidden");
-                cqcContainer.classList.add("hidden"); // Optional: Hide standard CQC tag for specific FRA form
+                cqcContainer.classList.add("hidden"); 
             } else {
                 fraFields.classList.add("hidden");
                 cqcContainer.classList.remove("hidden");
@@ -252,6 +263,8 @@
             formData.append("cqc_tag", document.getElementById("reportCQC").value);
             formData.append("title", document.getElementById("reportTitle").value);
             formData.append("description", document.getElementById("reportDesc").value);
+            // SENDING THE NEW TARGET DEADLINE DATA
+            formData.append("days_to_resolve", document.getElementById("reportTarget").value);
             
             if (document.getElementById("reportType").value === "fire_risk_assessment") {
                 formData.append("fra_risk_level", document.getElementById("fraRisk").value);
@@ -264,7 +277,7 @@
             const response = await fetch(`${API_URL}/reports/`, { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData });
             if (response.ok) {
                 document.getElementById("reportForm").reset();
-                toggleFRAFields(); // Reset dynamic form
+                toggleFRAFields(); 
                 fetchReports(); fetchAnalytics(); switchTab(document.getElementById("reportType").value);
             }
         }
@@ -281,13 +294,34 @@
                 let tags = "";
                 if (r.cqc_tag && r.cqc_tag !== "None") tags += `<span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded ml-2">CQC: ${r.cqc_tag}</span>`;
                 
-                // Specific styling for FRA Risk Levels
                 if (isFRA && r.fra_risk_level) {
                     let color = "bg-green-100 text-green-800";
                     if(r.fra_risk_level === "Moderate") color = "bg-yellow-100 text-yellow-800";
                     if(r.fra_risk_level === "Substantial") color = "bg-orange-100 text-orange-800";
                     if(r.fra_risk_level === "Intolerable") color = "bg-red-600 text-white animate-pulse";
                     tags += `<span class="${color} text-xs font-bold px-2 py-0.5 rounded ml-2 border border-current">Risk: ${r.fra_risk_level}</span>`;
+                }
+
+                // NEW TARGET DEADLINE BADGE CALCULATOR
+                let dueBadge = "";
+                if (r.due_date && !isClosed) {
+                    const due = new Date(r.due_date);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+                    
+                    let dueColor = "bg-blue-100 text-blue-800";
+                    let dueText = `Target: ${daysLeft} Days`;
+                    
+                    if (daysLeft < 0) { 
+                        dueColor = "bg-red-100 text-red-900 font-bold border-red-300 animate-pulse"; 
+                        dueText = `Overdue: ${Math.abs(daysLeft)} Days`; 
+                    } else if (daysLeft === 0) { 
+                        dueColor = "bg-red-500 text-white font-bold"; 
+                        dueText = "DUE TODAY"; 
+                    } else if (daysLeft <= 2) { 
+                        dueColor = "bg-orange-200 text-orange-900 font-bold border-orange-400"; 
+                    }
+                    dueBadge = `<span class="text-xs px-2 py-0.5 rounded ml-2 border ${dueColor}">⏱️ ${dueText}</span>`;
                 }
                 
                 let adminButtons = "";
@@ -323,7 +357,7 @@
                 const cardHTML = `
                     <div class="border ${cardStyle} p-4 rounded shadow-sm mb-4">
                         <div class="flex justify-between items-start">
-                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type.replace(/_/g, ' ')}</span> ${tags} <span class="text-xs ml-2 text-gray-400">🏢 ${r.site_location}</span>
+                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type.replace(/_/g, ' ')}</span> ${tags} ${dueBadge} <span class="text-xs ml-2 text-gray-400">🏢 ${r.site_location}</span>
                             <h4 class="font-bold text-lg text-slate-900 mt-1">${r.title}</h4></div>
                             <div class="flex gap-2">${adminButtons}</div>
                         </div>
