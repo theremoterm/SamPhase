@@ -81,21 +81,26 @@
             </div>
 
             <div class="bg-white p-6 rounded shadow-lg border-t-4 border-indigo-500">
-                <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">File a New Report or Audit</h3>
+                <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">File a New Entry</h3>
                 <form id="reportForm" onsubmit="submitReport(event)">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                            <select id="reportType" class="w-full p-2 border rounded"><option value="incident">Incident/Audit</option><option value="safeguarding">Safeguarding</option><option value="complaint">Complaint</option></select>
+                            <select id="reportType" onchange="toggleFRAFields()" class="w-full p-2 border rounded">
+                                <option value="incident">Incident/Audit</option>
+                                <option value="safeguarding">Safeguarding</option>
+                                <option value="complaint">Complaint</option>
+                                <option value="fire_risk_assessment">Fire Risk Assessment (FRA)</option>
+                            </select>
                         </div>
-                        <div>
+                        <div id="cqcContainer">
                             <label class="block text-sm font-medium text-gray-700 mb-1">CQC Domain</label>
                             <select id="reportCQC" class="w-full p-2 border rounded bg-indigo-50">
                                 <option value="None">None</option><option value="Safe">Safe</option><option value="Effective">Effective</option><option value="Caring">Caring</option><option value="Responsive">Responsive</option><option value="Well-led">Well-led</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title / Location</label>
                             <input type="text" id="reportTitle" required class="w-full p-2 border rounded">
                         </div>
                         <div>
@@ -103,7 +108,28 @@
                             <input type="file" id="reportFile" class="w-full p-1 border rounded text-sm">
                         </div>
                     </div>
-                    <textarea id="reportDesc" placeholder="Details..." required class="w-full p-2 border rounded mb-4 h-20"></textarea>
+                    
+                    <div id="fraFields" class="hidden bg-orange-50 p-4 border border-orange-200 rounded mb-4">
+                        <h4 class="font-bold text-orange-800 mb-2 border-b border-orange-200 pb-1">🔥 Fire Safety Specifics</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Risk Rating</label>
+                                <select id="fraRisk" class="w-full p-2 border rounded border-orange-300 focus:ring-orange-500">
+                                    <option value="Trivial">Trivial</option>
+                                    <option value="Tolerable">Tolerable</option>
+                                    <option value="Moderate">Moderate</option>
+                                    <option value="Substantial">Substantial</option>
+                                    <option value="Intolerable">Intolerable (Immediate Action)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Hazards Identified</label>
+                                <textarea id="fraHazards" placeholder="List specific hazards found..." class="w-full p-2 border rounded border-orange-300 h-16"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <textarea id="reportDesc" placeholder="Details or Methodology..." required class="w-full p-2 border rounded mb-4 h-20"></textarea>
                     <div class="flex justify-end">
                         <button type="submit" class="bg-indigo-600 text-white font-bold px-8 py-2 rounded hover:bg-indigo-700 shadow-md">Submit Entry</button>
                     </div>
@@ -115,11 +141,13 @@
                     <button onclick="switchTab('incident')" id="tab-incident" class="px-6 py-2 font-bold text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap">🚨 Incidents</button>
                     <button onclick="switchTab('safeguarding')" id="tab-safeguarding" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap">🛡️ Safeguarding</button>
                     <button onclick="switchTab('complaint')" id="tab-complaint" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap">💬 Complaints</button>
+                    <button onclick="switchTab('fire_risk_assessment')" id="tab-fire_risk_assessment" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap">🔥 Fire Safety</button>
                     <button onclick="switchTab('audit'); fetchAuditLogs()" id="tab-audit" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap hidden">⬛ Black Box</button>
                 </div>
                 <div id="incidentList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2"></div>
                 <div id="safeguardingList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
                 <div id="complaintList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
+                <div id="fire_risk_assessmentList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
                 
                 <div id="auditList" class="space-y-2 max-h-[800px] overflow-y-auto pr-2 hidden font-mono text-xs">
                     <table class="w-full text-left border-collapse">
@@ -161,8 +189,23 @@
 
         if (token) { showDashboard(); }
 
+        // Dynamic Form Logic for FRA
+        function toggleFRAFields() {
+            const type = document.getElementById("reportType").value;
+            const fraFields = document.getElementById("fraFields");
+            const cqcContainer = document.getElementById("cqcContainer");
+            
+            if(type === "fire_risk_assessment") {
+                fraFields.classList.remove("hidden");
+                cqcContainer.classList.add("hidden"); // Optional: Hide standard CQC tag for specific FRA form
+            } else {
+                fraFields.classList.add("hidden");
+                cqcContainer.classList.remove("hidden");
+            }
+        }
+
         function switchTab(tabName) {
-            ['incident', 'safeguarding', 'complaint', 'audit'].forEach(t => {
+            ['incident', 'safeguarding', 'complaint', 'fire_risk_assessment', 'audit'].forEach(t => {
                 document.getElementById(t+'List').classList.add('hidden');
                 document.getElementById('tab-'+t).className = 'px-6 py-2 font-bold text-gray-500 whitespace-nowrap';
             });
@@ -192,7 +235,7 @@
             
             document.getElementById("userBadge").innerText = `Role: ${userRole.toUpperCase()}`;
             document.getElementById("userBadge").classList.remove("hidden");
-            document.getElementById("siteBadge").innerText = `📍 ${userSite}`;
+            document.getElementById("siteBadge").innerText = `🏢 ${userSite}`;
             document.getElementById("siteBadge").classList.remove("hidden");
 
             if (userRole === "admin") {
@@ -210,12 +253,18 @@
             formData.append("title", document.getElementById("reportTitle").value);
             formData.append("description", document.getElementById("reportDesc").value);
             
+            if (document.getElementById("reportType").value === "fire_risk_assessment") {
+                formData.append("fra_risk_level", document.getElementById("fraRisk").value);
+                formData.append("fra_hazards", document.getElementById("fraHazards").value);
+            }
+            
             const fileInput = document.getElementById("reportFile");
             if (fileInput.files.length > 0) formData.append("file", fileInput.files[0]);
 
             const response = await fetch(`${API_URL}/reports/`, { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData });
             if (response.ok) {
                 document.getElementById("reportForm").reset();
+                toggleFRAFields(); // Reset dynamic form
                 fetchReports(); fetchAnalytics(); switchTab(document.getElementById("reportType").value);
             }
         }
@@ -223,16 +272,28 @@
         async function fetchReports() {
             const response = await fetch(`${API_URL}/reports/`, { headers: { "Authorization": `Bearer ${token}` } });
             const reports = await response.json();
-            ['incident', 'safeguarding', 'complaint'].forEach(t => document.getElementById(t+'List').innerHTML = "");
+            ['incident', 'safeguarding', 'complaint', 'fire_risk_assessment'].forEach(t => document.getElementById(t+'List').innerHTML = "");
             
             reports.forEach(r => {
                 const isClosed = r.status === "Closed";
-                const cqcBadge = r.cqc_tag !== "None" ? `<span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded ml-2">CQC: ${r.cqc_tag}</span>` : "";
+                const isFRA = r.report_type === "fire_risk_assessment";
+                
+                let tags = "";
+                if (r.cqc_tag && r.cqc_tag !== "None") tags += `<span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded ml-2">CQC: ${r.cqc_tag}</span>`;
+                
+                // Specific styling for FRA Risk Levels
+                if (isFRA && r.fra_risk_level) {
+                    let color = "bg-green-100 text-green-800";
+                    if(r.fra_risk_level === "Moderate") color = "bg-yellow-100 text-yellow-800";
+                    if(r.fra_risk_level === "Substantial") color = "bg-orange-100 text-orange-800";
+                    if(r.fra_risk_level === "Intolerable") color = "bg-red-600 text-white animate-pulse";
+                    tags += `<span class="${color} text-xs font-bold px-2 py-0.5 rounded ml-2 border border-current">Risk: ${r.fra_risk_level}</span>`;
+                }
                 
                 let adminButtons = "";
                 if (!isClosed) {
                     adminButtons += `<button onclick="openCloseModal(${r.id})" class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded shadow">✅ Run RCA & Close</button>`;
-                    if (userRole !== "staff") adminButtons += `<button onclick="generateSecureLink(${r.id})" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded shadow ml-2">🔗 LADO Link</button>`;
+                    if (userRole !== "staff") adminButtons += `<button onclick="generateSecureLink(${r.id})" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded shadow ml-2">🔗 Secure Link</button>`;
                 }
                 
                 let actionPlanHTML = "";
@@ -249,18 +310,25 @@
                         </div>`;
                 }
 
+                let fraHazardsHTML = "";
+                if (isFRA && r.fra_hazards && !isClosed) {
+                    fraHazardsHTML = `<div class="mt-2 bg-orange-50 border border-orange-200 p-2 rounded text-sm text-orange-900 font-semibold">⚠️ Logged Hazards: ${r.fra_hazards}</div>`;
+                }
+
                 const activeLinkHTML = r.secure_link_id && !isClosed ? `<div class="mt-2 text-xs bg-purple-100 text-purple-800 p-2 rounded">Link: <a href="${API_URL}/shared/${r.secure_link_id}" target="_blank" class="underline font-bold">${API_URL}/shared/${r.secure_link_id}</a></div>` : "";
                 const attachmentLink = r.attachment_path ? `<a href="${API_URL}/${r.attachment_path}" target="_blank" class="text-indigo-600 text-sm mt-2 inline-block hover:underline font-semibold bg-indigo-50 px-2 py-1 rounded">📎 View File</a>` : "";
 
+                const cardStyle = isFRA ? "border-orange-300 bg-orange-50/30" : "border-slate-200 bg-white";
+
                 const cardHTML = `
-                    <div class="border border-slate-200 p-4 rounded bg-white shadow-sm mb-4">
+                    <div class="border ${cardStyle} p-4 rounded shadow-sm mb-4">
                         <div class="flex justify-between items-start">
-                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type}</span> ${cqcBadge} <span class="text-xs ml-2 text-gray-400">🏢 ${r.site_location}</span>
+                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type.replace(/_/g, ' ')}</span> ${tags} <span class="text-xs ml-2 text-gray-400">🏢 ${r.site_location}</span>
                             <h4 class="font-bold text-lg text-slate-900 mt-1">${r.title}</h4></div>
                             <div class="flex gap-2">${adminButtons}</div>
                         </div>
-                        <p class="text-sm text-slate-700 mt-2 bg-slate-50 p-3 rounded border border-slate-100">${r.description}</p>
-                        ${attachmentLink} ${activeLinkHTML} ${actionPlanHTML}
+                        <p class="text-sm text-slate-700 mt-2 bg-white p-3 rounded border border-slate-100">${r.description}</p>
+                        ${fraHazardsHTML} ${attachmentLink} ${activeLinkHTML} ${actionPlanHTML}
                     </div>`;
                     
                 document.getElementById(r.report_type+'List').innerHTML += cardHTML;
