@@ -2,6 +2,7 @@ fastapi
 uvicorn
 sqlalchemy
 passlib[bcrypt]
+bcrypt==4.2.1
 python-jose[cryptography]
 python-multipart
 apscheduler
