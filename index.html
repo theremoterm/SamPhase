@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SamPhase Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <nav class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-4">
+            <h1 class="text-xl font-bold tracking-wider">SAM<span class="text-indigo-400">PHASE</span> Enterprise</h1>
+            <span id="userBadge" class="hidden bg-slate-700 text-xs px-2 py-1 rounded border border-slate-600"></span>
+            <span id="siteBadge" class="hidden bg-indigo-900 text-xs px-2 py-1 rounded border border-indigo-700"></span>
+        </div>
+        <button id="logoutBtn" class="hidden bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm font-bold shadow" onclick="logout()">Logout</button>
+    </nav>
+
+    <div class="max-w-7xl mx-auto mt-8 p-4">
+
+        <div id="loginSection" class="bg-white p-8 rounded shadow-lg max-w-md mx-auto mt-10">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">System Login</h2>
+            <div id="loginError" class="hidden bg-red-100 text-red-700 px-4 py-3 rounded mb-4 text-sm text-center"></div>
+            <input type="text" id="username" placeholder="Username" class="w-full p-2 border rounded mb-4">
+            <input type="password" id="password" placeholder="Password" class="w-full p-2 border rounded mb-6">
+            <button onclick="login()" class="w-full bg-indigo-600 text-white font-bold p-2 rounded hover:bg-indigo-700">Sign In</button>
+        </div>
+
+        <div id="dashboardSection" class="hidden space-y-8">
+
+            <div id="adminSection" class="hidden bg-slate-800 text-white p-6 rounded shadow-lg">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
+                    <h3 class="text-lg font-bold">Admin Controls</h3>
+                    <div class="flex gap-2">
+                        <button onclick="runAIAudit()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-sm font-bold shadow">🤖 Run AI Copilot</button>
+                        <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-bold shadow">📥 Export CSV</button>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <input type="text" id="newUsername" placeholder="New Username" class="w-1/5 p-2 rounded text-black">
+                    <input type="password" id="newPassword" placeholder="Temp Password" class="w-1/5 p-2 rounded text-black">
+                    <select id="newRole" class="w-1/5 p-2 rounded text-black">
+                        <option value="staff">Staff</option><option value="manager">Manager</option><option value="designated_safeguarding_lead">DSL</option><option value="admin">Admin</option>
+                    </select>
+                    <select id="newSite" class="w-1/5 p-2 rounded text-black">
+                        <option value="Bournemouth HQ">Bournemouth HQ</option>
+                        <option value="Poole Branch">Poole Branch</option>
+                        <option value="Christchurch Site">Christchurch Site</option>
+                        <option value="Global">Global (All Sites)</option>
+                    </select>
+                    <button onclick="createUser()" class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded font-bold shadow w-1/5">Create User</button>
+                </div>
+            </div>
+
+            <div id="aiOutputContainer" class="hidden bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-6 rounded shadow-lg border-l-4 border-purple-400">
+                <h3 class="font-bold text-lg border-b border-purple-400 pb-2 mb-2 flex justify-between items-center">
+                    AI Copilot Analysis <button onclick="document.getElementById('aiOutputContainer').classList.add('hidden')" class="text-sm bg-purple-800 px-2 rounded hover:bg-purple-700">Close</button>
+                </h3>
+                <div id="aiOutputText" class="text-sm whitespace-pre-wrap"></div>
+            </div>
+
+            <div id="analyticsSection" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500 text-center">
+                    <h4 class="text-xs text-gray-500 font-bold uppercase">Open Cases</h4>
+                    <p id="statOpen" class="text-4xl font-bold text-blue-900 mt-2">0</p>
+                </div>
+                <div class="bg-white p-4 rounded shadow border-l-4 border-green-500 text-center">
+                    <h4 class="text-xs text-gray-500 font-bold uppercase">Closed Cases</h4>
+                    <p id="statClosed" class="text-4xl font-bold text-green-900 mt-2">0</p>
+                </div>
+                <div class="bg-white p-4 rounded shadow col-span-2">
+                    <h4 class="text-xs text-gray-500 font-bold uppercase mb-2 border-b pb-1">CQC Domain Open Heatmap</h4>
+                    <div class="grid grid-cols-5 gap-2 text-center text-sm font-bold">
+                        <div class="text-blue-600">Safe</div><div class="text-blue-600">Effective</div><div class="text-blue-600">Caring</div><div class="text-blue-600">Responsive</div><div class="text-blue-600">Well-led</div>
+                        <div id="h-Safe" class="bg-gray-100 rounded p-1">0</div><div id="h-Effective" class="bg-gray-100 rounded p-1">0</div><div id="h-Caring" class="bg-gray-100 rounded p-1">0</div><div id="h-Responsive" class="bg-gray-100 rounded p-1">0</div><div id="h-Well-led" class="bg-gray-100 rounded p-1">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded shadow-lg border-t-4 border-indigo-500">
+                <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">File a New Report or Audit</h3>
+                <form id="reportForm" onsubmit="submitReport(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                            <select id="reportType" class="w-full p-2 border rounded"><option value="incident">Incident/Audit</option><option value="safeguarding">Safeguarding</option><option value="complaint">Complaint</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">CQC Domain</label>
+                            <select id="reportCQC" class="w-full p-2 border rounded bg-indigo-50">
+                                <option value="None">None</option><option value="Safe">Safe</option><option value="Effective">Effective</option><option value="Caring">Caring</option><option value="Responsive">Responsive</option><option value="Well-led">Well-led</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <input type="text" id="reportTitle" required class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Evidence (Optional)</label>
+                            <input type="file" id="reportFile" class="w-full p-1 border rounded text-sm">
+                        </div>
+                    </div>
+                    <textarea id="reportDesc" placeholder="Details..." required class="w-full p-2 border rounded mb-4 h-20"></textarea>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-indigo-600 text-white font-bold px-8 py-2 rounded hover:bg-indigo-700 shadow-md">Submit Entry</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded shadow-lg">
+                <div class="flex border-b mb-6 overflow-x-auto">
+                    <button onclick="switchTab('incident')" id="tab-incident" class="px-6 py-2 font-bold text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap">🚨 Incidents</button>
+                    <button onclick="switchTab('safeguarding')" id="tab-safeguarding" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap">🛡️ Safeguarding</button>
+                    <button onclick="switchTab('complaint')" id="tab-complaint" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap">💬 Complaints</button>
+                    <button onclick="switchTab('audit'); fetchAuditLogs()" id="tab-audit" class="px-6 py-2 font-bold text-gray-500 whitespace-nowrap hidden">⬛ Black Box</button>
+                </div>
+                <div id="incidentList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2"></div>
+                <div id="safeguardingList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
+                <div id="complaintList" class="space-y-4 max-h-[800px] overflow-y-auto pr-2 hidden"></div>
+
+                <div id="auditList" class="space-y-2 max-h-[800px] overflow-y-auto pr-2 hidden font-mono text-xs">
+                    <table class="w-full text-left border-collapse">
+                        <thead><tr class="bg-slate-100 border-b"><th class="p-2">Timestamp</th><th class="p-2">User</th><th class="p-2">Action</th></tr></thead>
+                        <tbody id="auditTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="actionModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-xl mb-2 text-indigo-900 border-b pb-2">RCA & Action Plan Matrix</h3>
+            <p class="text-sm text-gray-600 mb-4">Complete the '5 Whys' root cause analysis to proceed with incident closure.</p>
+
+            <div class="bg-slate-50 p-4 rounded border mb-4 space-y-3">
+                <input type="text" id="rca1" placeholder="Why did the incident happen?" class="w-full p-2 border rounded text-sm">
+                <input type="text" id="rca2" placeholder="Why did THAT happen?" class="w-full p-2 border rounded text-sm">
+                <input type="text" id="rca3" placeholder="Why did THAT happen?" class="w-full p-2 border rounded text-sm">
+                <input type="text" id="rca4" placeholder="Why did THAT happen?" class="w-full p-2 border rounded text-sm">
+                <input type="text" id="rca5" placeholder="Root Systemic Cause:" class="w-full p-2 border rounded border-red-300 bg-red-50 text-sm font-bold">
+            </div>
+
+            <textarea id="actionPlanText" placeholder="Action Plan (How will we fix the Root Cause?)" class="w-full p-2 border rounded mb-4 h-24"></textarea>
+            <input type="hidden" id="closeReportId">
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('actionModal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 rounded font-bold">Cancel</button>
+                <button onclick="submitCloseReport()" class="px-4 py-2 bg-green-600 text-white rounded font-bold">Finalize & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = (window.location.origin === "null" || window.location.origin === "file://") ? "http://127.0.0.1:8000" : window.location.origin;
+        let token = localStorage.getItem("token");
+        let userRole = localStorage.getItem("role");
+        let userSite = localStorage.getItem("site");
+
+        if (token) { showDashboard(); }
+
+        function switchTab(tabName) {
+            ['incident', 'safeguarding', 'complaint', 'audit'].forEach(t => {
+                document.getElementById(t+'List').classList.add('hidden');
+                document.getElementById('tab-'+t).className = 'px-6 py-2 font-bold text-gray-500 whitespace-nowrap';
+            });
+            document.getElementById(tabName+'List').classList.remove('hidden');
+            document.getElementById('tab-'+tabName).className = 'px-6 py-2 font-bold text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap';
+        }
+
+        async function login() {
+            const formData = new URLSearchParams();
+            formData.append("username", document.getElementById("username").value);
+            formData.append("password", document.getElementById("password").value);
+            const response = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData });
+            if (response.ok) {
+                const data = await response.json();
+                token = data.access_token; userRole = data.role; userSite = data.site;
+                localStorage.setItem("token", token); localStorage.setItem("role", userRole); localStorage.setItem("site", userSite);
+                showDashboard();
+            } else alert("Invalid credentials!");
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        function showDashboard() {
+            document.getElementById("loginSection").classList.add("hidden");
+            document.getElementById("dashboardSection").classList.remove("hidden");
+            document.getElementById("logoutBtn").classList.remove("hidden");
+
+            document.getElementById("userBadge").innerText = `Role: ${userRole.toUpperCase()}`;
+            document.getElementById("userBadge").classList.remove("hidden");
+            document.getElementById("siteBadge").innerText = `📍 ${userSite}`;
+            document.getElementById("siteBadge").classList.remove("hidden");
+
+            if (userRole === "admin") {
+                document.getElementById("adminSection").classList.remove("hidden");
+                document.getElementById("tab-audit").classList.remove("hidden"); // Reveal Black Box
+            }
+            fetchReports(); fetchAnalytics();
+        }
+
+        async function submitReport(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            formData.append("type", document.getElementById("reportType").value);
+            formData.append("cqc_tag", document.getElementById("reportCQC").value);
+            formData.append("title", document.getElementById("reportTitle").value);
+            formData.append("description", document.getElementById("reportDesc").value);
+
+            const fileInput = document.getElementById("reportFile");
+            if (fileInput.files.length > 0) formData.append("file", fileInput.files[0]);
+
+            const response = await fetch(`${API_URL}/reports/`, { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData });
+            if (response.ok) {
+                document.getElementById("reportForm").reset();
+                fetchReports(); fetchAnalytics(); switchTab(document.getElementById("reportType").value);
+            }
+        }
+
+        async function fetchReports() {
+            const response = await fetch(`${API_URL}/reports/`, { headers: { "Authorization": `Bearer ${token}` } });
+            const reports = await response.json();
+            ['incident', 'safeguarding', 'complaint'].forEach(t => document.getElementById(t+'List').innerHTML = "");
+
+            reports.forEach(r => {
+                const isClosed = r.status === "Closed";
+                const cqcBadge = r.cqc_tag !== "None" ? `<span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded ml-2">CQC: ${r.cqc_tag}</span>` : "";
+
+                let adminButtons = "";
+                if (!isClosed) {
+                    adminButtons += `<button onclick="openCloseModal(${r.id})" class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded shadow">✅ Run RCA & Close</button>`;
+                    if (userRole !== "staff") adminButtons += `<button onclick="generateSecureLink(${r.id})" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded shadow ml-2">🔗 LADO Link</button>`;
+                }
+
+                let actionPlanHTML = "";
+                if (isClosed) {
+                    actionPlanHTML = `
+                        <div class="mt-4 bg-slate-100 p-3 rounded border border-slate-300">
+                            <h5 class="text-sm font-bold text-slate-800 border-b border-slate-300 pb-1 mb-2">Root Cause Analysis (5 Whys)</h5>
+                            <ul class="text-xs text-slate-600 list-decimal ml-4 mb-2">
+                                <li>${r.rca_1 || "N/A"}</li><li>${r.rca_2 || "N/A"}</li><li>${r.rca_3 || "N/A"}</li><li>${r.rca_4 || "N/A"}</li>
+                                <li class="font-bold text-red-600">${r.rca_5 || "N/A"}</li>
+                            </ul>
+                            <h5 class="text-sm font-bold text-green-900 border-t border-green-300 pt-2 mb-1">Action Plan</h5>
+                            <p class="text-sm text-green-800">${r.action_plan}</p>
+                        </div>`;
+                }
+
+                const activeLinkHTML = r.secure_link_id && !isClosed ? `<div class="mt-2 text-xs bg-purple-100 text-purple-800 p-2 rounded">Link: <a href="${API_URL}/shared/${r.secure_link_id}" target="_blank" class="underline font-bold">${API_URL}/shared/${r.secure_link_id}</a></div>` : "";
+                const attachmentLink = r.attachment_path ? `<a href="${API_URL}/${r.attachment_path}" target="_blank" class="text-indigo-600 text-sm mt-2 inline-block hover:underline font-semibold bg-indigo-50 px-2 py-1 rounded">📎 View File</a>` : "";
+
+                const cardHTML = `
+                    <div class="border border-slate-200 p-4 rounded bg-white shadow-sm mb-4">
+                        <div class="flex justify-between items-start">
+                            <div><span class="text-xs font-bold text-slate-500 uppercase">${r.report_type}</span> ${cqcBadge} <span class="text-xs ml-2 text-gray-400">📍 ${r.site_location}</span>
+                            <h4 class="font-bold text-lg text-slate-900 mt-1">${r.title}</h4></div>
+                            <div class="flex gap-2">${adminButtons}</div>
+                        </div>
+                        <p class="text-sm text-slate-700 mt-2 bg-slate-50 p-3 rounded border border-slate-100">${r.description}</p>
+                        ${attachmentLink} ${activeLinkHTML} ${actionPlanHTML}
+                    </div>`;
+
+                document.getElementById(r.report_type+'List').innerHTML += cardHTML;
+            });
+        }
+
+        async function fetchAnalytics() {
+            const res = await fetch(`${API_URL}/reports/summary`, { headers: { "Authorization": `Bearer ${token}` } });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById("statOpen").innerText = data.open;
+                document.getElementById("statClosed").innerText = data.closed;
+                document.getElementById("analyticsSection").classList.remove("hidden");
+
+                for (const [domain, stats] of Object.entries(data.heatmap)) {
+                    document.getElementById(`h-${domain}`).innerText = stats.Open;
+                    document.getElementById(`h-${domain}`).className = stats.Open > 0 ? "bg-red-200 font-bold rounded p-1" : "bg-gray-100 rounded p-1";
+                }
+            }
+        }
+
+        // --- NEW: FETCH AUDIT LOGS ---
+        async function fetchAuditLogs() {
+            const res = await fetch(`${API_URL}/audit_logs/`, { headers: { "Authorization": `Bearer ${token}` } });
+            if (res.ok) {
+                const logs = await res.json();
+                const tbody = document.getElementById("auditTableBody");
+                tbody.innerHTML = "";
+                logs.forEach(l => {
+                    const date = new Date(l.timestamp).toLocaleString();
+                    tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-2">${date}</td><td class="p-2 font-bold">${l.username}</td><td class="p-2 text-slate-600">${l.action}</td></tr>`;
+                });
+            }
+        }
+
+        // --- NEW: AI COPILOT ---
+        async function runAIAudit() {
+            document.getElementById('aiOutputContainer').classList.remove('hidden');
+            document.getElementById('aiOutputText').innerText = "Connecting to AI Copilot... Analyzing textual themes...";
+            const res = await fetch(`${API_URL}/ai_analysis/`, { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('aiOutputText').innerText = data.analysis;
+            }
+        }
+
+        function openCloseModal(id) {
+            document.getElementById("closeReportId").value = id;
+            document.getElementById("actionModal").classList.remove("hidden");
+        }
+
+        async function submitCloseReport() {
+            const f = new FormData();
+            f.append("action_plan", document.getElementById("actionPlanText").value);
+            f.append("rca_1", document.getElementById("rca1").value);
+            f.append("rca_2", document.getElementById("rca2").value);
+            f.append("rca_3", document.getElementById("rca3").value);
+            f.append("rca_4", document.getElementById("rca4").value);
+            f.append("rca_5", document.getElementById("rca5").value);
+            f.append("review_days", 30);
+
+            await fetch(`${API_URL}/reports/${document.getElementById("closeReportId").value}/close`, { method: "PUT", headers: { "Authorization": `Bearer ${token}` }, body: f });
+            document.getElementById("actionModal").classList.add("hidden");
+            ['rca1','rca2','rca3','rca4','rca5','actionPlanText'].forEach(id => document.getElementById(id).value = "");
+            fetchReports(); fetchAnalytics();
+        }
+
+        async function generateSecureLink(id) {
+            await fetch(`${API_URL}/reports/${id}/share`, { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
+            fetchReports();
+        }
+
+        async function createUser() {
+            const f = new FormData();
+            f.append("username", document.getElementById("newUsername").value);
+            f.append("password", document.getElementById("newPassword").value);
+            f.append("role", document.getElementById("newRole").value);
+            f.append("site", document.getElementById("newSite").value);
+            const res = await fetch(`${API_URL}/users/`, { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: f });
+            if (res.ok) alert("User created!");
+        }
+
+        async function exportCSV() {
+            const res = await fetch(`${API_URL}/reports/export`, { headers: { "Authorization": `Bearer ${token}` } });
+            if (res.ok) {
+                const blob = await res.blob();
+                const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob);
+                a.download = `SamPhase_Export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a); a.click(); a.remove();
+            }
+        }
+    </script>
+</body>
+</html>
