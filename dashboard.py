@@ -30,7 +30,12 @@ else:
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Filtered Entries", len(filtered_df))
     col2.metric("Open Concerns", len(filtered_df[filtered_df['status'] == 'Open']))
-    col3.metric("Escalations", len(filtered_df[filtered_df['escalation_level'] > 0]))
+    
+    # Isolate FRA Data for the dashboard
+    fra_df = filtered_df[filtered_df['report_type'] == 'fire_risk_assessment']
+    high_risk_fra = len(fra_df[fra_df['fra_risk_level'].isin(['Substantial', 'Intolerable'])])
+    
+    col3.metric("High-Risk FRA Alerts", high_risk_fra, delta_color="inverse")
     col4.metric("Active Pilots", len(filtered_df[filtered_df['is_pilot'] == True]))
     st.divider()
 
@@ -41,9 +46,12 @@ else:
         st.bar_chart(site_counts, color="#4f46e5")
         
     with c2:
-        st.subheader("Tiered Escalation Matrix")
-        escalation_counts = filtered_df['escalation_level'].value_counts().sort_index()
-        st.bar_chart(escalation_counts, color="#e11d48")
+        st.subheader("Fire Safety: Risk Level Distribution")
+        if not fra_df.empty:
+            fra_counts = fra_df['fra_risk_level'].value_counts()
+            st.bar_chart(fra_counts, color="#ea580c")
+        else:
+            st.info("No Fire Risk Assessments logged yet.")
 
     st.divider()
     st.subheader("Root Cause Analysis (RCA) Extractor")
