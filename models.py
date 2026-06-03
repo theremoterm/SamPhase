@@ -10,6 +10,7 @@ class ReportType(Enum):
     INCIDENT = "incident"
     SAFEGUARDING = "safeguarding"
     COMPLAINT = "complaint"
+    FRA = "fire_risk_assessment" # NEW: Fire Risk Assessment
 
 class UserRole(Enum):
     STAFF = "staff"
@@ -54,6 +55,10 @@ class Report(Base):
     rca_3 = Column(String, nullable=True)
     rca_4 = Column(String, nullable=True)
     rca_5 = Column(String, nullable=True)
+    
+    # NEW: DEDICATED FIRE RISK ASSESSMENT FIELDS
+    fra_risk_level = Column(String, nullable=True) # Trivial, Tolerable, Moderate, Substantial, Intolerable
+    fra_hazards = Column(Text, nullable=True)
     
     secure_link_id = Column(String, unique=True, index=True, nullable=True)
     secure_link_expires = Column(DateTime, nullable=True)
